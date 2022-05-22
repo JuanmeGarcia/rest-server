@@ -22,6 +22,7 @@ class Server {
 
     middlewares() {
         //CORS
+        
         this.app.use(cors())
 
         //lectura y parseo del body
@@ -30,7 +31,7 @@ class Server {
         //rutas estaticas (publicas)
         this.app.use(express.static('public'))
     }
-
+ 
 	routes() {
         this.app.use(this.usersRoutePath, require('../routes/users'))
 	}
