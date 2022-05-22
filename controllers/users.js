@@ -1,56 +1,70 @@
 const { response, request } = require('express')
+const User = require('../models/users')
+const { encyptPassword } = require('../helpers/dbValidators')
 
-const getUsers = (req = request, res = response) => {
+const getUsers = async (req = request, res = response) => {
+	const { limit, from } = req.query
+	const query = { state: true }
 
-    const { nombre, apellido, page = 10, limit = 20 } = req.query
+	const [total, users] = await Promise.all([
+		User.countDocuments(query),
+		User.find(query).skip(Number(from)).limit(Number(limit)),
+	])
 
 	res.json({
-		message: 'get api - controlador de usuarios',
-        nombre,
-        apellido,
-        page,
-        limit,
+		total,
+		users,
 	})
 }
 
-const createUser = (req, res = response) => {
-    const { nombre, edad } = req.body
+const createUser = async (req, res = response) => {
+	const { firstName, email, password, role } = req.body
+	const user = new User({ firstName, email, password, role })
+
+	//verificar si el correo existe
+
+	//encriptrar la password
+
+	user.password = await encyptPassword(password)
+	//guardar en base de datos
+
+	await user.save()
 
 	res.status(201).json({
-		message: 'post api - controlador de usuarios',
-        nombre,
-        edad,
+		user,
 	})
 }
 
-const deleteUser = (req, res = response) => {
-	res.json({
-		message: 'delete api - controlador de usuarios',
-	})
+const deleteUser = async (req, res = response) => {
+	const { id } = req.params
+
+	//fisicamente eliminarlo
+	// const user = await User.findByIdAndDelete(id)
+	//cambiando el estado a false
+
+	const user = await User.findByIdAndUpdate(id, { state: false })
+
+	res.json(user)
 }
 
-const updateUser = (req, res = response) => {
+const updateUser = async (req, res = response) => {
+	const { id } = req.params
+	const { _id, password, google, email, ...remainder } = req.body
+	// Validar contra base de datos
 
-    const id = req.params.id
+	if (password) {
+		remainder.password = await encyptPassword(password)
+	}
 
-	res.json({
-		message: 'put api - controlador de usuarios',
-        id
-	})
+	const user = await User.findByIdAndUpdate(id, remainder)
+
+	res.json(user)
 }
 
-const patchUser = (req, res = response) => {
-
-
-	res.json({
-		message: 'patch api - controlador de usuarios',
-	})
-}
 
 module.exports = {
 	getUsers,
-    createUser,
-    deleteUser,
-    updateUser,
-    patchUser
+	createUser,
+	deleteUser,
+	updateUser,
 }
